@@ -113,7 +113,14 @@ final class Game extends AggregateRoot
 		}
 
 		// If the player has built the Library district, they can choose 2 cards, else 1
-		//TODO
+		$maxNumberOfCardsToBeChosen = 1;
+		if ($victim->city()->has(District::library())) {
+			$maxNumberOfCardsToBeChosen = 2;
+		}
+
+		if (count($districts) > $maxNumberOfCardsToBeChosen) {
+			throw ChooseDistrictsNotPlayable::tooManyDistrictsChosen($player, $districts);
+		}
 
 		// EVENT EMITTED: DistrictsChosen
 	}
