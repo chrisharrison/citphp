@@ -511,85 +511,106 @@ final class Game extends AggregateRoot
 	private function sizeOfCompletedCity(): int
 	{
 		// Ordinarily 8 but if the Bell Tower has been built - 7.
+		$bellTowerBuilt = false;
+
+		foreach ($this->players as $player) {
+			if ($player->city->has(District::bellTower())) {
+				$bellTowerBuilt = true;
+				break;
+			}
+		}
+
+		return $bellTowerBuilt;
 	}
 
-	private switchTurn()
+	private function onCharacterChosen(CharacterChosen $event)
 	{
-
-	}
-
-	private function onCharacterChosen()
-	{
-
+		// Set the player's round to have chosen the character
+		// Advance turn
 	}
 
 	private function onGoldTaken()
 	{
-
+		// Increment the player's purse
+		// Set the player's round to have initiated and completed the default action
 	}
 
 	private function onDistrcitsDrawn()
 	{
-
+		// Draw districts from the district deck and put them in the player's potential hand
+		// Set the player's round to have initiated the default action
 	}
 
 	private function onDistrictsChosen()
 	{
-
+		// Put the districts in the player's hand. Any remaining districts in the potential hand go back in the district deck
+		// Set the player's round to have completed the default action
 	}
 
 	private function onDistrictsBuilt()
 	{
-
+		// Move the districts from the player's hand to the city
+		// Increment the number of districts built by this player this round
 	}
 
 	private function onMurdered()
 	{
-
+		// Set the victim to murdered
+		// Set the player's round to have played the special power
 	}
 
 	private function onTheft()
 	{
-
+		// Set the victim to thieved
+		// Set the player's round to have played the special power
 	}
 
 	private function onSwappedHandWithPlayer()
 	{
-
+		// Give the player's hand to the victim and viceversa
+		// Set the player's round to have played the special power
 	}
 
 	private function onSwappedHandWithDeck()
 	{
-
+		// Put the chosen cards back in the district deck and draw new districts equal in number to those returned and put them in the player's hand
+		// Set the player's round to have played the special power
 	}
 
 	private function onCollectedBonusIncome()
 	{
-
+		// Work out how much bonus income the player should receive
+		// Increment the player's purse by the above amount
+		// Set the player's round to have played the special power
 	}
 
 	private function onDistrictDestroyed()
 	{
-
+		// Remove the district from the victim's city
 	}
 
 	private function onTurnEnded()
 	{
-
+		// Advance turn
 	}
 
 	private function onUsedLaboratoryPower()
 	{
-
+		// Put the district back in the deck
+		// Increment the player's purse by one
+		// Set that the player has used this power
 	}
 
 	private function onUsedSmithyPower()
 	{
-
+		// Decrement the player's purse by 2
+		// Draw 3 districts to the player's hand
+		// Set that the player has used this power
 	}
 
 	private function onUsedGraveyardPower()
 	{
-
+		// Restore district to player's city
+		// Decrement the player's purse
 	}
 }
