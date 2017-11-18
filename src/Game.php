@@ -162,7 +162,7 @@ final class Game extends AggregateRoot
 
 		// Check they can afford to build the districts
 		if ($districts->totalValue() > $player->purse()) {
-			throw BuildDistrictsNotPlayable::cannotAfford($player, $districts->totalValue(), $player->purse());
+			throw BuildDistrictsNotPlayable::cannotAfford($player, $districts->totalValue());
 		}
 
 		// Check they don't already have the districts in their city. If they have built the Quarry district they can build 1 duplicate.
@@ -376,7 +376,7 @@ final class Game extends AggregateRoot
 		}
 
 		if ($player->purse() < $district->value() + $priceModifier) {
-			throw DestroyDistrictNotPlayable::cannotAfford($player, $district, $player->purse());
+			throw DestroyDistrictNotPlayable::cannotAfford($player, $district);
 		}
 
 		// Check the victim's city is not complete [8 districts, 7 if bell tower]
@@ -472,7 +472,7 @@ final class Game extends AggregateRoot
 
 		// Check they can afford to use the power (2 gold)
 		if ($player->purse() < 2) {
-			throw UseSmithyPowerNotPlayable::cannotAfford($player, $player->purse());
+			throw UseSmithyPowerNotPlayable::cannotAfford($player);
 		}
 
 		// Check they have not already used this power
@@ -499,11 +499,11 @@ final class Game extends AggregateRoot
 
 		// Check they can afford to use the power (1 gold)
 		if ($player->purse() < 1) {
-			throw UseGraveyardPowerNotPlayable::cannotAfford($player, $player->purse());
+			throw UseGraveyardPowerNotPlayable::cannotAfford($player);
 		}
 
-		// Check the district they are trying to use this power on is not the graveyard itself
-		//TODO
+		// The district they are trying to use this power on cannot be the graveyard itself
+		// TODO
 
 		// EVENT EMITTED: UsedGraveyardPower
 	}
@@ -511,6 +511,11 @@ final class Game extends AggregateRoot
 	private function sizeOfCompletedCity(): int
 	{
 		// Ordinarily 8 but if the Bell Tower has been built - 7.
+	}
+
+	private switchTurn()
+	{
+
 	}
 
 	private function onCharacterChosen()
