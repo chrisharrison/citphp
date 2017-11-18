@@ -17,6 +17,8 @@ final class Game extends AggregateRoot
 		// Check the player has not already chosen a character
 
 		// Check if the card has not already been chosen
+
+		// EVENT EMITTED: CharacterChosen
 	}
 
 	public function takeGold()
@@ -28,6 +30,8 @@ final class Game extends AggregateRoot
 		// Check if it's the player's turn
 
 		// Check they haven't already initiated their action
+
+		// EVENT EMITTED: GoldTaken
 	}
 
 	public function drawDistricts()
@@ -41,6 +45,8 @@ final class Game extends AggregateRoot
 		// Check they haven't already initiated their action
 
 		// If the player has built the Observatory district, they can draw 3 cards, else 2
+
+		// EVENT EMITTED: DistrictsDrawn
 	}
 
 	public function chooseDistricts()
@@ -56,6 +62,8 @@ final class Game extends AggregateRoot
 		// Check they haven't already completed their action
 
 		// If the player has built the Library district, they can choose 2 cards, else 1
+
+		// EVENT EMITTED: DistrictsChosen
 	}
 
 	public function buildDistricts()
@@ -73,6 +81,8 @@ final class Game extends AggregateRoot
 		// Check they can afford to build the district
 
 		// Check they don't already have the district in their city. If they have built the Quarry district they can build 1 duplicate.
+
+		// EVENT EMITTED: DistrictsBuilt
 	}
 
 	public function murder()
@@ -84,6 +94,8 @@ final class Game extends AggregateRoot
 		// Check they are playing the assasin
 
 		// Check they haven't already exercised their power
+
+		// EVENT EMITTED: Murdered
 	}
 
 	public function steal()
@@ -95,6 +107,8 @@ final class Game extends AggregateRoot
 		// Check they are playing the thief
 
 		// Check they haven't already exercised their power
+
+		// EVENT EMITTED: Theft
 	}
 
 	public function swapHandWithPlayer()
@@ -106,6 +120,8 @@ final class Game extends AggregateRoot
 		// Check they are playing the magician
 
 		// Check they haven't already exercised their power
+
+		// EVENT EMITTED: SwappedHandWithPlayer
 	}
 
 	public function swapHandWithDeck()
@@ -116,7 +132,13 @@ final class Game extends AggregateRoot
 
 		// Check they are playing the magician
 
+		// Check they want to swap at least 1 card
+
+		// CHeck they have enough cards in their hand
+
 		// Check they haven't already exercised their power
+
+		// EVENT EMITTED: SwappedHandWithDeck
 	}
 
 	public function collectBonusIncome()
@@ -128,6 +150,8 @@ final class Game extends AggregateRoot
 		// Check they are playing the king, bishop, merchant or warlord
 
 		// Check they haven't already exercised their power
+
+		// EVENT EMITTED: CollectedBonusIncome
 	}
 
 	public function destroy()
@@ -149,6 +173,8 @@ final class Game extends AggregateRoot
 		// Check the victim's city is not complete [8 districts, 7 if bell tower]
 
 		// Check they are not trying to destroy a 'Keep' as it's indestructible
+
+		// EVENT EMITTED: Destroyed
 	}
 
 	public function endTurn()
@@ -156,6 +182,8 @@ final class Game extends AggregateRoot
 		// Check it's the player's turn
 
 		// Check they have completed their action
+
+		// EVENT EMITTED: TurnEnded
 	}
 
 	public function useLaboratoryPower()
@@ -167,6 +195,8 @@ final class Game extends AggregateRoot
 		// Check they have the district they want to discard in their hand
 
 		// Check they have not already used this power
+
+		// EVENT EMITTED: UsedLaboratoryPower
 	}
 
 	public function useSmithyPower()
@@ -178,6 +208,8 @@ final class Game extends AggregateRoot
 		// Check they can afford to use the power (2 gold)
 
 		// Check they have not already used this power
+
+		// EVENT EMITTED: UsedSmithyPower
 	}
 
 	public function useGraveyardPower()
@@ -191,5 +223,7 @@ final class Game extends AggregateRoot
 		// Check the district they are trying to use this power on is not the graveyard itself
 
 		// Check they have not already used this power
+
+		// EVENT EMITTED: UsedGraveyardPower
 	}
 }
