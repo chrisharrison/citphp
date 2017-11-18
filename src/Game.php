@@ -10,7 +10,7 @@ final class Game extends AggregateRoot
 	private $characterDeck;
 	private $districtDeck;
 
-	public function chooseCharacter(PlayerId $player, Character $character)
+	public function chooseCharacter()
 	{
 		// Check if it's this player's turn
 
@@ -154,7 +154,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: CollectedBonusIncome
 	}
 
-	public function destroy()
+	public function destroyDistrict()
 	{
 		// Check this is not a graveyard turn
 
@@ -174,7 +174,7 @@ final class Game extends AggregateRoot
 
 		// Check they are not trying to destroy a 'Keep' as it's indestructible
 
-		// EVENT EMITTED: Destroyed
+		// EVENT EMITTED: DistrcitDestroyed
 	}
 
 	public function endTurn()
@@ -225,5 +225,80 @@ final class Game extends AggregateRoot
 		// Check they have not already used this power
 
 		// EVENT EMITTED: UsedGraveyardPower
+	}
+
+	private function onCharacterChosen()
+	{
+
+	}
+
+	private function onGoldTaken()
+	{
+
+	}
+
+	private function onDistrcitsDrawn()
+	{
+
+	}
+
+	private function onDistrictsChosen()
+	{
+
+	}
+
+	private function onDistrictsBuilt()
+	{
+
+	}
+
+	private function onMurdered()
+	{
+
+	}
+
+	private function onTheft()
+	{
+
+	}
+
+	private function onSwappedHandWithPlayer()
+	{
+
+	}
+
+	private function onSwappedHandWithDeck()
+	{
+
+	}
+
+	private function onCollectedBonusIncome()
+	{
+
+	}
+
+	private function onDistrictDestroyed()
+	{
+
+	}
+
+	private function onTurnEnded()
+	{
+
+	}
+
+	private function onUsedLaboratoryPower()
+	{
+
+	}
+
+	private function onUsedSmithyPower()
+	{
+
+	}
+
+	private function onUsedGraveyardPower()
+	{
+
 	}
 }
