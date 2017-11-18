@@ -10,7 +10,7 @@ final class Game extends AggregateRoot
 	private $characterDeck;
 	private $districtDeck;
 
-	public function chooseCharacter()
+	public function chooseCharacter(PlayerId $player, Character $character)
 	{
 		// Check if it's this player's turn
 
@@ -21,7 +21,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: CharacterChosen
 	}
 
-	public function takeGold()
+	public function takeGold(PlayerId $player)
 	{
 		// Check this is not a graveyard turn
 
@@ -34,7 +34,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: GoldTaken
 	}
 
-	public function drawDistricts()
+	public function drawDistricts(PlayerId $player)
 	{
 		// Check this is not a graveyard turn
 
@@ -49,7 +49,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: DistrictsDrawn
 	}
 
-	public function chooseDistricts()
+	public function chooseDistricts(PlayerId $player, Districts $districts)
 	{
 		// Check this is not a graveyard turn
 
@@ -66,7 +66,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: DistrictsChosen
 	}
 
-	public function buildDistricts()
+	public function buildDistricts(PlayerId $player, Districts $districts)
 	{
 		// Check this is not a graveyard turn
 
@@ -85,7 +85,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: DistrictsBuilt
 	}
 
-	public function murder()
+	public function murder(PlayerId $player, Character $victim)
 	{
 		// Check this is not a graveyard turn
 
@@ -98,7 +98,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: Murdered
 	}
 
-	public function steal()
+	public function steal(PlayerId $player, Character $victim)
 	{
 		// Check this is not a graveyard turn
 
@@ -111,7 +111,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: Theft
 	}
 
-	public function swapHandWithPlayer()
+	public function swapHandWithPlayer(PlayerId $player, PlayerId $victim)
 	{
 		// Check this is not a graveyard turn
 
@@ -124,7 +124,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: SwappedHandWithPlayer
 	}
 
-	public function swapHandWithDeck()
+	public function swapHandWithDeck(PlayerId $player, Districts $districts)
 	{
 		// Check this is not a graveyard turn
 
@@ -141,7 +141,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: SwappedHandWithDeck
 	}
 
-	public function collectBonusIncome()
+	public function collectBonusIncome(PlayerId $player)
 	{
 		// Check this is not a graveyard turn
 
@@ -154,7 +154,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: CollectedBonusIncome
 	}
 
-	public function destroyDistrict()
+	public function destroyDistrict(PlayerId $player, PlayerId $victim, District $district)
 	{
 		// Check this is not a graveyard turn
 
@@ -177,7 +177,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: DistrcitDestroyed
 	}
 
-	public function endTurn()
+	public function endTurn(PlayerId $player)
 	{
 		// Check it's the player's turn
 
@@ -186,7 +186,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: TurnEnded
 	}
 
-	public function useLaboratoryPower()
+	public function useLaboratoryPower(PlayerId $player, District $district)
 	{
 		// Check it's the player's turn
 
@@ -199,7 +199,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: UsedLaboratoryPower
 	}
 
-	public function useSmithyPower()
+	public function useSmithyPower(PlayerId $player)
 	{
 		// Check it's the player's turn
 
@@ -212,7 +212,7 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: UsedSmithyPower
 	}
 
-	public function useGraveyardPower()
+	public function useGraveyardPower(PlayerId $player)
 	{
 		// Check if this is a graveyard turn
 
