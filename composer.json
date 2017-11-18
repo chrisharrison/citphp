@@ -1,0 +1,21 @@
+{
+    "name": "chrisharrison/citphp",
+    "description": "PHP implementation of Citadels",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Chris Harrison",
+            "email": "c.harrison1988@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.1",
+        "prooph/event-sourcing": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ChrisHarrison\\Citphp\\": "src/"
+        }
+    },
+}
