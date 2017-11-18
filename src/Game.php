@@ -154,8 +154,8 @@ final class Game extends AggregateRoot
 		}
 
 		// Check they can afford to build the districts
-		if ($districts->totalValue() > $player->gold()) {
-			throw BuildDistrictsNotPlayable::cannotAfford($player, $districts->totalValue, $player->gold());
+		if ($districts->totalValue() > $player->purse()) {
+			throw BuildDistrictsNotPlayable::cannotAfford($player, $districts->totalValue(), $player->purse());
 		}
 
 		// Check they don't already have the districts in their city. If they have built the Quarry district they can build 1 duplicate.
@@ -167,7 +167,7 @@ final class Game extends AggregateRoot
 		}
 
 		foreach ($districts as $district) {
-			if ($player->city()->total($district) > $maximumDuplicates) {
+			if ($player->city()->numberOf($district) > $maximumDuplicates) {
 				throw BuildDistrictsNotPlayable::cityIsFull($player, $district, $maximumDuplicates);
 			}
 		}
@@ -325,9 +325,10 @@ final class Game extends AggregateRoot
 		// EVENT EMITTED: CollectedBonusIncome
 	}
 
-	public function destroyDistrict(PlayerId $player, PlayerId $victim, District $district)
+	public function destroyDistrict(PlayerId $player, PlayerId $victimId, District $district)
 	{
 		$player = $this->players->byId($playerId);
+		$victim = $this->players->byId($victimId);
 
 		// Check if it's this player's turn
 		if (!$player->round()->isTurn()) {
@@ -354,65 +355,155 @@ final class Game extends AggregateRoot
 			throw DestroyDistrictNotPlayable::playedDestroy($player);
 		}
 
-		// Check they can afford to destroy the district (taking into account that if the victim has built the Great Wall, the prices are higher)
-
 		// Check the victim has the district in their city
+		if (!$victim->city()->has($district)) {
+			throw DestroyDistrictNotPlayable::victimHasNotBuiltDistrict($player);
+		}
+
+		// Check they can afford to destroy the district...
+		// ...(taking into account that if the victim has built the Great Wall, the prices are higher)
+		$priceModifier = 0;
+
+		if ($victim->city()->has(District::greatWall())) {
+			$priceModifier = 1;
+		}
+
+		if ($player->purse() < $district->value() + $priceModifier) {
+			throw DestroyDistrictNotPlayable::cannotAfford($player, $district, $player->purse());
+		}
 
 		// Check the victim's city is not complete [8 districts, 7 if bell tower]
+		if ($victim->city()->size() >= $this->sizeOfCompletedCity()) {
+			throw DestroyDistrictNotPlayable::completeCity($player, $victim);
+		}
 
 		// Check they are not trying to destroy a 'Keep' as it's indestructible
+		if ($district->sameValueAs(District::keep())) {
+			throw DestroyDistrictNotPlayable::cannotDestroyKeep($player);
+		}
 
 		// EVENT EMITTED: DistrcitDestroyed
 	}
 
 	public function endTurn(PlayerId $player)
 	{
-		// Check it's the player's turn
+		$player = $this->players->byId($playerId);
 
-		// Check they have completed their action
+		// Check if it's this player's turn
+		if (!$player->round()->isTurn()) {
+			throw EndTurnNotPlayable::notPlayersTurn($player, $this->players->current());
+		}
+
+		// Check they have completed their default action
+		if (!$player->round()->defaultActionCompleted()) {
+			throw BuildDistrictsNotPlayable::defaultActionNotCompleted($player);
+		}
 
 		// EVENT EMITTED: TurnEnded
 	}
 
 	public function useLaboratoryPower(PlayerId $player, District $district)
 	{
-		// Check it's the player's turn
+		$player = $this->players->byId($playerId);
+
+		// Check if it's this player's turn
+		if (!$player->round()->isTurn()) {
+			throw UseLaboratoryPowerNotPlayable::notPlayersTurn($player, $this->players->current());
+		}
+
+		// Check they have chosen a character
+		if ($player->round()->hasChosenCharacter()) {
+			throw UseLaboratoryPowerNotPlayable::characterNotChosenYet($player);
+		}
+
+		// Check this is not a graveyard turn
+		if ($player->round()->isGraveyardTurn()) {
+			throw UseLaboratoryPowerNotPlayable::graveyardTurn($player);
+		}
 
 		// Check they have built the Labaratory
+		if (!$player->city()->has(District::laboratory())) {
+			throw UseLaboratoryPowerNotPlayable::haveNotBuiltLaboratory($player);
+		}
 
 		// Check they have the district they want to discard in their hand
+		if (!$player->hand()->has($district)) {
+			throw UseLaboratoryPowerNotPlayable::districtNotInHand($player, $district);
+		}
 
 		// Check they have not already used this power
+		if ($player->round()->playedLaboratoryPower()) {
+			throw UseLaboratoryPowerNotPlayable::playedLaboratoryPower($player);
+		}
 
 		// EVENT EMITTED: UsedLaboratoryPower
 	}
 
 	public function useSmithyPower(PlayerId $player)
 	{
-		// Check it's the player's turn
+		$player = $this->players->byId($playerId);
+
+		// Check if it's this player's turn
+		if (!$player->round()->isTurn()) {
+			throw UseSmithyPowerNotPlayable::notPlayersTurn($player, $this->players->current());
+		}
+
+		// Check they have chosen a character
+		if ($player->round()->hasChosenCharacter()) {
+			throw UseSmithyPowerNotPlayable::characterNotChosenYet($player);
+		}
+
+		// Check this is not a graveyard turn
+		if ($player->round()->isGraveyardTurn()) {
+			throw UseSmithyPowerNotPlayable::graveyardTurn($player);
+		}
 
 		// Check they have built the Smithy
+		if (!$player->city()->has(District::smithy())) {
+			throw UseSmithyPowerNotPlayable::haveNotBuiltSmithy($player);
+		}
 
 		// Check they can afford to use the power (2 gold)
+		if ($player->purse() < 2) {
+			throw UseSmithyPowerNotPlayable::cannotAfford($player, $player->purse());
+		}
 
 		// Check they have not already used this power
+		if ($player->round()->playedSmithyPower()) {
+			throw UseSmithyPowerNotPlayable::playedSmithyPower($player);
+		}
 
 		// EVENT EMITTED: UsedSmithyPower
 	}
 
 	public function useGraveyardPower(PlayerId $player)
 	{
-		// Check if this is a graveyard turn
+		$player = $this->players->byId($playerId);
 
-		// Check it's the player's turn
+		// Check if it's this player's turn
+		if (!$player->round()->isTurn()) {
+			throw UseGraveyardPowerNotPlayable::notPlayersTurn($player, $this->players->current());
+		}
+
+		// Check this is a graveyard turn
+		if (!$player->round()->isGraveyardTurn()) {
+			throw UseGraveyardPowerNotPlayable::notAGraveyardTurn($player);
+		}
 
 		// Check they can afford to use the power (1 gold)
+		if ($player->purse() < 1) {
+			throw UseGraveyardPowerNotPlayable::cannotAfford($player, $player->purse());
+		}
 
 		// Check the district they are trying to use this power on is not the graveyard itself
-
-		// Check they have not already used this power
+		//TODO
 
 		// EVENT EMITTED: UsedGraveyardPower
+	}
+
+	private function sizeOfCompletedCity(): int
+	{
+		// Ordinarily 8 but if the Bell Tower has been built - 7.
 	}
 
 	private function onCharacterChosen()
