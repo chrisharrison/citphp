@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp;
 
-final class Game extends AggregateRoot
+final class Game
 {
+	use EventProducerTrait;
+	use EventSourcedTrait;
+
+	private $id;
 	private $players;
 	private $characterDeck;
 	private $districtDeck;
@@ -28,6 +32,8 @@ final class Game extends AggregateRoot
 		if (!$this->characterDeck->in($character)) {
 			throw ChooseCharacterNotPlayable::characterHasBeenDrawn($player, $character);
 		}
+
+		$this->recordThat()
 
 		// EVENT EMITTED: CharacterChosen
 	}
