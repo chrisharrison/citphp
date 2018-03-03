@@ -1,6 +1,6 @@
 {
     "name": "chrisharrison/citphp",
-    "description": "PHP implementation of Citadels",
+    "description": "PHP implementation of Citadels.",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -10,12 +10,14 @@
         }
     ],
     "require": {
-        "php": "^7.1",
-        "prooph/event-sourcing": "^4.0"
+        "php": ">=7.1",
+        "prooph/event-sourcing": "^5.0",
+        "funeralzone/valueobjects": "^0.3.1",
+        "funeralzone/valueobject-extensions": "^0.0.7"
     },
     "autoload": {
         "psr-4": {
             "ChrisHarrison\\Citphp\\": "src/"
         }
-    },
+    }
 }

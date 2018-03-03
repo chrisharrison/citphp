@@ -4,23 +4,60 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp;
 
+use ChrisHarrison\Citphp\Model\Character;
+use ChrisHarrison\Citphp\Model\Characters;
+use ChrisHarrison\Citphp\Model\District;
+use ChrisHarrison\Citphp\Model\Districts;
+use ChrisHarrison\Citphp\Model\Events\CharacterChosen;
+use ChrisHarrison\Citphp\Model\Events\DistrictsDrawn;
+use ChrisHarrison\Citphp\Model\Exceptions\BuildDistrictsNotPlayable;
+use ChrisHarrison\Citphp\Model\Exceptions\ChooseCharacterNotPlayable;
+use ChrisHarrison\Citphp\Model\Exceptions\ChooseDistrictsNotPlayable;
+use ChrisHarrison\Citphp\Model\Exceptions\DrawDistrictsNotPlayable;
+use ChrisHarrison\Citphp\Model\Exceptions\TakeGoldNotPlayable;
+use ChrisHarrison\Citphp\Model\GameId;
+use ChrisHarrison\Citphp\Model\PlayerId;
+use ChrisHarrison\Citphp\Model\Players;
+use Prooph\EventSourcing\Aggregate\EventProducerTrait;
+use Prooph\EventSourcing\Aggregate\EventSourcedTrait;
+
 final class Game
 {
 	use EventProducerTrait;
 	use EventSourcedTrait;
 
-	private $id;
-	private $players;
-	private $characterDeck;
-	private $districtDeck;
+    /**
+     * @var GameId
+     */
+    private $id;
 
-	public function chooseCharacter(PlayerId $playerId, Character $character)
+    /**
+     * @var Players
+     */
+    private $players;
+
+    /**
+     * @var Characters
+     */
+    private $characterDeck;
+
+    /**
+     * @var Districts
+     */
+    private $districtDeck;
+
+    /**
+     * @param PlayerId $playerId
+     * @param Character $character
+     * @throws ChooseCharacterNotPlayable
+     */
+    public function chooseCharacter(PlayerId $playerId, Character $character)
 	{
 		$player = $this->players->byId($playerId);
 
 		// Check if it's this player's turn
 		if (!$player->round()->isTurn()) {
-			throw ChooseCharacterNotPlayable::notPlayersTurn($player, $this->players->current())
+			throw ChooseCharacterNotPlayable::notPlayersTurn($player, $this->players->current());
 		}
 
 		// Check the player has not already chosen a character
@@ -29,16 +66,21 @@ final class Game
 		}
 
 		// Check if the character has not already been chosen
-		if (!$this->characterDeck->in($character)) {
+		if (!$this->characterDeck->has($character)) {
 			throw ChooseCharacterNotPlayable::characterHasBeenDrawn($player, $character);
 		}
 
-		$this->recordThat()
-
-		// EVENT EMITTED: CharacterChosen
+		$this->recordThat(CharacterChosen::occur($this->id->toNative(), [
+            'playerId' => $playerId->toNative(),
+            'character' => $character->toNative(),
+        ]));
 	}
 
-	public function takeGold(PlayerId $player)
+    /**
+     * @param PlayerId $playerId
+     * @throws TakeGoldNotPlayable
+     */
+    public function takeGold(PlayerId $playerId)
 	{
 		$player = $this->players->byId($playerId);
 
@@ -58,14 +100,20 @@ final class Game
 		}
 
 		// Check they haven't already initiated their default action
-		if ($player->round()->defaultActionInitiated()) {
-			throw TakeGoldNotPlayable::alreadyPlayed($player);
+		if ($player->round()->isDefaultActionInitiated()) {
+			throw TakeGoldNotPlayable::defaultActionInitiated($player);
 		}
 
-		// EVENT EMITTED: GoldTaken
+        $this->recordThat(CharacterChosen::occur($this->id->toNative(), [
+            'playerId' => $playerId->toNative(),
+        ]));
 	}
 
-	public function drawDistricts(PlayerId $player)
+    /**
+     * @param PlayerId $playerId
+     * @throws DrawDistrictsNotPlayable
+     */
+    public function drawDistricts(PlayerId $playerId)
 	{
 		$player = $this->players->byId($playerId);
 
@@ -85,16 +133,28 @@ final class Game
 		}
 
 		// Check they haven't already initiated their default action
-		if ($player->round()->defaultActionInitiated()) {
+		if ($player->round()->isDefaultActionInitiated()) {
 			throw DrawDistrictsNotPlayable::defaultActionInitiated($player);
 		}
 
-		// If the player has built the Observatory district, they can draw 3 cards, else 2
+        // If the player has built the Observatory district, they can draw 3 cards, else 2
+        $numberDrawn = 2;
+        if ($player->city()->has(District::observatory())) {
+            $numberDrawn = 3;
+        }
 
-		// EVENT EMITTED: DistrictsDrawn
+        $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
+            'playerId' => $playerId->toNative(),
+            'numberDrawn' => $numberDrawn,
+        ]));
 	}
 
-	public function chooseDistricts(PlayerId $player, Districts $districts)
+    /**
+     * @param PlayerId $playerId
+     * @param Districts $districts
+     * @throws ChooseDistrictsNotPlayable
+     */
+    public function chooseDistricts(PlayerId $playerId, Districts $districts)
 	{
 		$player = $this->players->byId($playerId);
 
@@ -109,29 +169,37 @@ final class Game
 		}
 
 		// Check if the districts they want to choose were drawn
-		if (!$player->round()->potentialHand()->in($districts)) {
+		if (!$player->round()->potentialHand()->hasAll($districts)) {
 			throw ChooseDistrictsNotPlayable::notInHand($player, $districts);
 		}
 
 		// Check they haven't already completed their default action
-		if ($player->round()->defaultActionCompleted()) {
+		if ($player->round()->isDefaultActionCompleted()) {
 			throw ChooseDistrictsNotPlayable::defaultActionCompleted($player);
 		}
 
 		// If the player has built the Library district, they can choose 2 cards, else 1
 		$maxNumberOfCardsToBeChosen = 1;
-		if ($victim->city()->has(District::library())) {
+		if ($player->city()->has(District::library())) {
 			$maxNumberOfCardsToBeChosen = 2;
 		}
 
 		if (count($districts) > $maxNumberOfCardsToBeChosen) {
-			throw ChooseDistrictsNotPlayable::tooManyDistrictsChosen($player, $districts);
+			throw ChooseDistrictsNotPlayable::tooManyDistrictsChosen($player, count($districts), $maxNumberOfCardsToBeChosen);
 		}
 
-		// EVENT EMITTED: DistrictsChosen
+        $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
+            'playerId' => $playerId->toNative(),
+            'districts' => $districts->toNative(),
+        ]));
 	}
 
-	public function buildDistricts(PlayerId $player, Districts $districts)
+    /**
+     * @param PlayerId $playerId
+     * @param Districts $districts
+     * @throws BuildDistrictsNotPlayable
+     */
+    public function buildDistricts(PlayerId $playerId, Districts $districts)
 	{
 		$player = $this->players->byId($playerId);
 
@@ -146,33 +214,32 @@ final class Game
 		}
 
 		// Check they have completed their default action
-		if (!$player->round()->defaultActionCompleted()) {
+		if (!$player->round()->isDefaultActionCompleted()) {
 			throw BuildDistrictsNotPlayable::defaultActionNotCompleted($player);
 		}
 
 		// Check they haven't already built their maximum districts this round (if playing architect it's 3, else 1)
-		if ($player->round()->character()->sameValueAs(Character::architect())) {
+		if ($player->round()->character()->isSame(Character::architect())) {
 			$maximumDistrictsThisRound = 3;
 		} else {
 			$maximumDistrictsThisRound = 1;
 		}
 
 		if ($player->round()->numberOfDistrictsBuilt() + count($districts) > $maximumDistrictsThisRound) {
-			throw BuildDistrictsNotPlayable::exceedMaximumDistricts($player, $maximumDistrictsThisRound);
+			throw BuildDistrictsNotPlayable::willExceedMaximumDistricts($player, $maximumDistrictsThisRound);
 		}
 
 		// Check they have the districts in their hand
-		if (!$player->hand()->in($districts)) {
+		if (!$player->hand()->hasAll($districts)) {
 			throw BuildDistrictsNotPlayable::notInHand($player, $districts);
 		}
 
 		// Check they can afford to build the districts
-		if ($districts->totalValue() > $player->purse()) {
+		if ($districts->totalValue()->isMoreThan($player->purse())) {
 			throw BuildDistrictsNotPlayable::cannotAfford($player, $districts->totalValue());
 		}
 
 		// Check they don't already have the districts in their city. If they have built the Quarry district they can build 1 duplicate.
-
 		if ($player->city()->has(District::quarry())) {
 			$maximumDuplicates = 1;
 		} else {
@@ -185,7 +252,10 @@ final class Game
 			}
 		}
 
-		// EVENT EMITTED: DistrictsBuilt
+        $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
+            'playerId' => $playerId->toNative(),
+            'districts' => $districts->toNative(),
+        ]));
 	}
 
 	public function murder(PlayerId $player, Character $victim)
