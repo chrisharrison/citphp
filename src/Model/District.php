@@ -8,6 +8,10 @@ use Funeralzone\ValueObjects\ValueObject;
 
 final class District implements ValueObject
 {
+    public function value(): GoldValue
+    {
+    }
+
     public static function observatory(): self
     {
     }
@@ -17,6 +21,22 @@ final class District implements ValueObject
     }
 
     public static function quarry(): self
+    {
+    }
+
+    public static function greatWall(): self
+    {
+    }
+
+    public static function keep(): self
+    {
+    }
+
+    public static function laboratory(): self
+    {
+    }
+
+    public static function smithy(): self
     {
     }
 }

@@ -23,4 +23,8 @@ final class Districts implements Set
     public function numberOf(District $district): int
     {
     }
+
+    public function size(): int
+    {
+    }
 }

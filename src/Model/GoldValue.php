@@ -14,4 +14,12 @@ final class GoldValue implements ValueObject
     public function isMoreThan(GoldValue $value): bool
     {
     }
+
+    public function isLessThan(GoldValue $value): bool
+    {
+    }
+
+    public function add(GoldValue $value): GoldValue
+    {
+    }
 }

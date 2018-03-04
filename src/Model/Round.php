@@ -28,6 +28,22 @@ final class Round implements ValueObject
     {
     }
 
+    public function isSpecialPowerPlayed(): bool
+    {
+    }
+
+    public function isDestroyDistrictPlayed(): bool
+    {
+    }
+
+    public function isLaboratoryPowerPlayed(): bool
+    {
+    }
+
+    public function isSmithyPowerPlayed(): bool
+    {
+    }
+
     public function potentialHand(): Districts
     {
     }

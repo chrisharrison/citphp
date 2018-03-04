@@ -69,4 +69,12 @@ trait TurnExceptionTrait
     public static function defaultActionNotCompleted(Player $player)
     {
     }
+
+    /**
+     * @param Player $player
+     * @return static
+     */
+    public static function specialPowerPlayed(Player $player)
+    {
+    }
 }
