@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp\Model;
 
-use Funeralzone\ValueObjects\Set;
-
-final class Characters implements Set
+final class Characters extends AbstractDeck implements Deck
 {
     public function has(Character $character): bool
     {

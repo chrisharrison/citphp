@@ -15,6 +15,17 @@ final class Players implements Set
 
     public function byId(PlayerId $id): Player
     {
+    }
 
+    public function byCharacter(Character $character): Player
+    {
+    }
+
+    public function withTurnAdvanced(): Players
+    {
+    }
+
+    public function withPlayer(Player $player): Players
+    {
     }
 }

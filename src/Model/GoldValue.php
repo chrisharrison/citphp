@@ -19,7 +19,7 @@ final class GoldValue implements ValueObject
     {
     }
 
-    public function add(GoldValue $value): GoldValue
+    public function withIncrement(GoldValue $value): GoldValue
     {
     }
 }

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp\Model;
 
-use Funeralzone\ValueObjects\Set;
-
-final class Districts implements Set
+final class Districts extends AbstractDeck implements Deck
 {
     public function has(District $district): bool
     {

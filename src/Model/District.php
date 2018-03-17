@@ -39,4 +39,8 @@ final class District implements ValueObject
     public static function smithy(): self
     {
     }
+
+    public static function bellTower(): self
+    {
+    }
 }

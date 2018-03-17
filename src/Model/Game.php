@@ -11,7 +11,10 @@ use ChrisHarrison\Citphp\Model\Districts;
 use ChrisHarrison\Citphp\Model\Events\CharacterChosen;
 use ChrisHarrison\Citphp\Model\Events\CollectedBonusIncome;
 use ChrisHarrison\Citphp\Model\Events\DistrictDestroyed;
+use ChrisHarrison\Citphp\Model\Events\DistrictsBuilt;
+use ChrisHarrison\Citphp\Model\Events\DistrictsChosen;
 use ChrisHarrison\Citphp\Model\Events\DistrictsDrawn;
+use ChrisHarrison\Citphp\Model\Events\GoldTaken;
 use ChrisHarrison\Citphp\Model\Events\Murdered;
 use ChrisHarrison\Citphp\Model\Events\SwappedHandWithDeck;
 use ChrisHarrison\Citphp\Model\Events\SwappedHandWithPlayer;
@@ -72,7 +75,7 @@ final class Game
      * @param Character $character
      * @throws ChooseCharacterNotPlayable
      */
-    public function chooseCharacter(PlayerId $playerId, Character $character)
+    public function chooseCharacter(PlayerId $playerId, Character $character): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -101,7 +104,7 @@ final class Game
      * @param PlayerId $playerId
      * @throws TakeGoldNotPlayable
      */
-    public function takeGold(PlayerId $playerId)
+    public function takeGold(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -125,7 +128,7 @@ final class Game
 			throw TakeGoldNotPlayable::defaultActionInitiated($player);
 		}
 
-        $this->recordThat(CharacterChosen::occur($this->id->toNative(), [
+        $this->recordThat(GoldTaken::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
         ]));
 	}
@@ -134,7 +137,7 @@ final class Game
      * @param PlayerId $playerId
      * @throws DrawDistrictsNotPlayable
      */
-    public function drawDistricts(PlayerId $playerId)
+    public function drawDistricts(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -175,7 +178,7 @@ final class Game
      * @param Districts $districts
      * @throws ChooseDistrictsNotPlayable
      */
-    public function chooseDistricts(PlayerId $playerId, Districts $districts)
+    public function chooseDistricts(PlayerId $playerId, Districts $districts): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -209,7 +212,7 @@ final class Game
 			throw ChooseDistrictsNotPlayable::tooManyDistrictsChosen($player, count($districts), $maxNumberOfCardsToBeChosen);
 		}
 
-        $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
+        $this->recordThat(DistrictsChosen::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
             'districts' => $districts->toNative(),
         ]));
@@ -220,7 +223,7 @@ final class Game
      * @param Districts $districts
      * @throws BuildDistrictsNotPlayable
      */
-    public function buildDistricts(PlayerId $playerId, Districts $districts)
+    public function buildDistricts(PlayerId $playerId, Districts $districts): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -273,7 +276,7 @@ final class Game
 			}
 		}
 
-        $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
+        $this->recordThat(DistrictsBuilt::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
             'districts' => $districts->toNative(),
         ]));
@@ -284,7 +287,7 @@ final class Game
      * @param Character $victim
      * @throws MurderNotPlayable
      */
-    public function murder(PlayerId $playerId, Character $victim)
+    public function murder(PlayerId $playerId, Character $victim): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -319,7 +322,7 @@ final class Game
      * @param Character $victim
      * @throws StealNotPlayable
      */
-    public function steal(PlayerId $playerId, Character $victim)
+    public function steal(PlayerId $playerId, Character $victim): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -354,7 +357,7 @@ final class Game
      * @param PlayerId $victim
      * @throws SwapHandWithPlayerNotPlayable
      */
-    public function swapHandWithPlayer(PlayerId $playerId, PlayerId $victim)
+    public function swapHandWithPlayer(PlayerId $playerId, PlayerId $victim): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -389,7 +392,7 @@ final class Game
      * @param Districts $districts
      * @throws SwapHandWithDeckNotPlayable
      */
-    public function swapHandWithDeck(PlayerId $playerId, Districts $districts)
+    public function swapHandWithDeck(PlayerId $playerId, Districts $districts): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -433,7 +436,7 @@ final class Game
      * @param PlayerId $playerId
      * @throws CollectBonusIncomeNotPlayable
      */
-    public function collectBonusIncome(PlayerId $playerId)
+    public function collectBonusIncome(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -473,7 +476,7 @@ final class Game
      * @param District $district
      * @throws DestroyDistrictNotPlayable
      */
-    public function destroyDistrict(PlayerId $playerId, PlayerId $victimId, District $district)
+    public function destroyDistrict(PlayerId $playerId, PlayerId $victimId, District $district): void
 	{
 		$player = $this->players->byId($playerId);
 		$victim = $this->players->byId($victimId);
@@ -516,7 +519,7 @@ final class Game
             $priceModifier = GoldValue::fromNative(1);
 		}
 
-		if ($player->purse()->isLessThan($district->value()->add($priceModifier))) {
+		if ($player->purse()->isLessThan($district->value()->withIncrement($priceModifier))) {
             throw DestroyDistrictNotPlayable::cannotAfford($player, $district);
         }
 
@@ -539,21 +542,15 @@ final class Game
 
     /**
      * @param PlayerId $playerId
-     * @throws BuildDistrictsNotPlayable
      * @throws EndTurnNotPlayable
      */
-    public function endTurn(PlayerId $playerId)
+    public function endTurn(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
 		// Check if it's this player's turn
 		if (!$player->round()->isTurn()) {
 			throw EndTurnNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
-
-		// Check they have completed their default action
-		if (!$player->round()->isDefaultActionCompleted()) {
-			throw BuildDistrictsNotPlayable::defaultActionNotCompleted($player);
 		}
 
         $this->recordThat(TurnEnded::occur($this->id->toNative(), [
@@ -566,7 +563,7 @@ final class Game
      * @param District $district
      * @throws UseLaboratoryPowerNotPlayable
      */
-    public function useLaboratoryPower(PlayerId $playerId, District $district)
+    public function useLaboratoryPower(PlayerId $playerId, District $district): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -610,7 +607,7 @@ final class Game
      * @param PlayerId $playerId
      * @throws UseSmithyPowerNotPlayable
      */
-    public function useSmithyPower(PlayerId $playerId)
+    public function useSmithyPower(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -653,7 +650,7 @@ final class Game
      * @param PlayerId $playerId
      * @throws UseGraveyardPowerNotPlayable
      */
-    public function useGraveyardPower(PlayerId $playerId)
+    public function useGraveyardPower(PlayerId $playerId): void
 	{
 		$player = $this->players->byId($playerId);
 
@@ -672,7 +669,10 @@ final class Game
         ]));
 	}
 
-	private function sizeOfCompletedCity(): int
+    /**
+     * @return int
+     */
+    private function sizeOfCompletedCity(): int
 	{
 		// Ordinarily 8 but if the Bell Tower has been built - 7.
 		$bellTowerBuilt = false;
@@ -684,95 +684,156 @@ final class Game
 			}
 		}
 
-		return $bellTowerBuilt;
+		return !$bellTowerBuilt ? 8 : 7;
 	}
 
-	private function onCharacterChosen(CharacterChosen $event)
+    private function onCharacterChosen(CharacterChosen $event): void
 	{
 		// Set the player's round to have chosen the character
+        $player = $this->players->byId($event->playerId());
+        $player = $player->withRound($player->round()->withCharacter($event->character()));
+        $this->players = $this->players->withPlayer($player);
+
+        // Remove the character from the deck
+        $this->characterDeck = $this->characterDeck->remove(new Characters([$event->character()]));
+
 		// Advance turn
+        $this->players = $this->players->withTurnAdvanced();
 	}
 
-	private function onGoldTaken()
+    private function onGoldTaken(GoldTaken $event): void
 	{
-		// Increment the player's purse
+        $player = $this->players->byId($event->playerId());
+
+        // Increment the player's purse
+        $player = $player->withPurse($player->purse()->withIncrement(GoldValue::fromNative(2)));
+
 		// Set the player's round to have initiated and completed the default action
+        $player = $player->withRound($player->round()->withDefaultActionCompleted());
+
+        $this->players = $this->players->withPlayer($player);
 	}
 
-	private function onDistrcitsDrawn()
+    private function onDistrcitsDrawn(DistrictsDrawn $event): void
 	{
+	    $player = $this->players->byId($event->playerId());
+
 		// Draw districts from the district deck and put them in the player's potential hand
+        /* @var Districts $drawn */
+        $drawn = $this->districtDeck->draw($event->numberDrawn());
+        $this->districtDeck = $this->districtDeck->remove($drawn);
+        $player = $player->withRound($player->round()->withPotentialHand($drawn));
+
 		// Set the player's round to have initiated the default action
+        $player = $player->withRound($player->round()->withDefaultActionInitiated());
+
+        $this->players = $this->players->withPlayer($player);
 	}
 
-	private function onDistrictsChosen()
+    private function onDistrictsChosen(DistrictsChosen $event): void
 	{
+	    $player = $this->players->byId($event->playerId());
+
 		// Put the districts in the player's hand. Any remaining districts in the potential hand go back in the district deck
+        $remainingDeck = $player->round()->potentialHand()->remove($event->districts());
+        $this->districtDeck = $this->districtDeck->add($remainingDeck);
+        $player = $player->withRound($player->round()->withPotentialHand(new Districts([])));
+        $player = $player->withHand($player->hand()->add($event->districts()));
+
 		// Set the player's round to have completed the default action
+        $player = $player->withRound($player->round()->withDefaultActionCompleted());
+
+        $this->players = $this->players->withPlayer($player);
 	}
 
-	private function onDistrictsBuilt()
+    private function onDistrictsBuilt(DistrictsBuilt $event): void
 	{
+        $player = $this->players->byId($event->playerId());
+
 		// Move the districts from the player's hand to the city
+        $player = $player->withHand($player->hand()->remove($event->districts()));
+        $player = $player->withCity($player->city()->add($event->districts()));
+
 		// Increment the number of districts built by this player this round
+        $player = $player->withRound($player->round()->withIncrementedNumberOfDistrictsBuilt($event->districts()->count()));
+
+        $this->players = $this->players->withPlayer($player);
 	}
 
-	private function onMurdered()
+    private function onMurdered(Murdered $event): void
 	{
+        $player = $this->players->byId($event->playerId());
+
 		// Set the victim to murdered
+        $victim = $this->players->byCharacter($event->victim());
+        $victim = $victim->withRound($victim->round()->murdered());
+
 		// Set the player's round to have played the special power
+        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
+
+        $this->players = $this->players->withPlayer($player);
+        $this->players = $this->players->withPlayer($victim);
 	}
 
-	private function onTheft()
+    private function onTheft(Theft $event): void
 	{
+        $player = $this->players->byId($event->playerId());
+
 		// Set the victim to thieved
+        $victim = $this->players->byCharacter($event->victim());
+        $victim = $victim->withRound($victim->round()->victimOfTheft());
+
 		// Set the player's round to have played the special power
+        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
+
+        $this->players = $this->players->withPlayer($player);
+        $this->players = $this->players->withPlayer($victim);
 	}
 
-	private function onSwappedHandWithPlayer()
+    private function onSwappedHandWithPlayer(): void
 	{
-		// Give the player's hand to the victim and viceversa
+		// Give the player's hand to the victim and vice versa
 		// Set the player's round to have played the special power
 	}
 
-	private function onSwappedHandWithDeck()
+    private function onSwappedHandWithDeck(): void
 	{
 		// Put the chosen cards back in the district deck and draw new districts equal in number to those returned and put them in the player's hand
 		// Set the player's round to have played the special power
 	}
 
-	private function onCollectedBonusIncome()
+    private function onCollectedBonusIncome(): void
 	{
 		// Work out how much bonus income the player should receive
 		// Increment the player's purse by the above amount
 		// Set the player's round to have played the special power
 	}
 
-	private function onDistrictDestroyed()
+    private function onDistrictDestroyed(): void
 	{
 		// Remove the district from the victim's city
 	}
 
-	private function onTurnEnded()
+    private function onTurnEnded(): void
 	{
 		// Advance turn
 	}
 
-	private function onUsedLaboratoryPower()
+    private function onUsedLaboratoryPower(): void
 	{
 		// Put the district back in the deck
 		// Increment the player's purse by one
 		// Set that the player has used this power
 	}
 
-	private function onUsedSmithyPower()
+    private function onUsedSmithyPower(): void
 	{
 		// Decrement the player's purse by 2
 		// Draw 3 districts to the player's hand
 		// Set that the player has used this power
 	}
 
-	private function onUsedGraveyardPower()
+    private function onUsedGraveyardPower(): void
 	{
 		// Restore district to player's city
 		// Decrement the player's purse

@@ -23,4 +23,20 @@ final class Player implements ValueObject
     public function purse(): GoldValue
     {
     }
+
+    public function withRound(Round $round): Player
+    {
+    }
+
+    public function withPurse(GoldValue $purse): Player
+    {
+    }
+
+    public function withHand(Districts $hand): Player
+    {
+    }
+
+    public function withCity(Districts $city): Player
+    {
+    }
 }
