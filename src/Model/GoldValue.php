@@ -22,4 +22,8 @@ final class GoldValue implements ValueObject
     public function withIncrement(GoldValue $value): GoldValue
     {
     }
+
+    public function withDecrement(GoldValue $value): GoldValue
+    {
+    }
 }

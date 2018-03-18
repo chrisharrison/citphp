@@ -12,6 +12,10 @@ final class District implements ValueObject
     {
     }
 
+    public function colour(): DistrictColour
+    {
+    }
+
     public static function observatory(): self
     {
     }

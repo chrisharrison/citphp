@@ -22,7 +22,7 @@ final class Districts extends AbstractDeck implements Deck
     {
     }
 
-    public function size(): int
+    public function byDistrictColour(DistrictColour $colour): Districts
     {
     }
 }

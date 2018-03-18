@@ -82,6 +82,18 @@ final class Round implements ValueObject
     {
     }
 
+    public function withDestroyDistrictPlayed(): Round
+    {
+    }
+
+    public function withLaboratoryPowerPlayed(): Round
+    {
+    }
+
+    public function withSmithyPowerPlayed(): Round
+    {
+    }
+
     public function withPotentialHand(Districts $hand): Round
     {
     }
