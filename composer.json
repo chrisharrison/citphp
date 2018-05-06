@@ -1,23 +1,26 @@
 {
-    "name": "chrisharrison/citphp",
-    "description": "PHP implementation of Citadels.",
-    "type": "project",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Chris Harrison",
-            "email": "c.harrison1988@gmail.com"
-        }
-    ],
-    "require": {
-        "php": ">=7.1",
-        "prooph/event-sourcing": "^5.0",
-        "funeralzone/valueobjects": "^0.3.1",
-        "funeralzone/valueobject-extensions": "^0.0.7"
-    },
-    "autoload": {
-        "psr-4": {
-            "ChrisHarrison\\Citphp\\": "src/"
-        }
+  "name": "chrisharrison/citphp",
+  "description": "PHP implementation of Citadels.",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Chris Harrison",
+      "email": "c.harrison1988@gmail.com"
     }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "prooph/event-sourcing": "^5.0",
+    "funeralzone/valueobjects": "^0.3.1",
+    "funeralzone/valueobject-extensions": "^0.0.7"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "ChrisHarrison\\Citphp\\": "src/"
+    }
+  }
 }
