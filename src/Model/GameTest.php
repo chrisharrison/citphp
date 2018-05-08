@@ -37,4 +37,59 @@ final class GameTest extends TestCase
     {
 
     }
+
+    public function test_player_cannot_take_gold_when_not_their_turn()
+    {
+
+    }
+
+    public function test_player_cannot_take_gold_when_its_a_graveyard_turn()
+    {
+
+    }
+
+    public function test_player_cannot_take_gold_before_they_have_chosen_a_character()
+    {
+
+    }
+
+    public function test_player_cannot_take_gold_if_they_have_already_completed_their_default_action()
+    {
+
+    }
+
+    public function test_event_is_raised_when_player_takes_gold()
+    {
+
+    }
+
+    public function test_on_take_gold_state_of_game_changes()
+    {
+
+    }
+
+    public function test_player_cannot_draw_districts_when_not_their_turn()
+    {
+
+    }
+
+    public function test_player_cannot_draw_districts_when_its_a_graveyard_turn()
+    {
+
+    }
+
+    public function test_player_cannot_draw_districts_before_they_have_chosen_a_character()
+    {
+
+    }
+
+    public function test_player_cannot_draw_districts_if_they_have_already_completed_their_default_action()
+    {
+
+    }
+
+    public function test_event_is_raised_when_player_draws_districts()
+    {
+
+    }
 }
