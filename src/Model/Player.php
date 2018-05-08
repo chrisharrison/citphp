@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp\Model;
 
+use ChrisHarrison\Citphp\Model\Character\Character;
 use Funeralzone\ValueObjects\ValueObject;
 
 final class Player implements ValueObject

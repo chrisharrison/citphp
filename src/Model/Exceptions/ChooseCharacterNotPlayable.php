@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp\Model\Exceptions;
 
-use ChrisHarrison\Citphp\Model\Character;
+use ChrisHarrison\Citphp\Model\Character\Character;
 use ChrisHarrison\Citphp\Model\Player;
 use Exception;
 

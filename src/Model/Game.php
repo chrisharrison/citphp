@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp;
 
-use ChrisHarrison\Citphp\Model\Character;
+use ChrisHarrison\Citphp\Model\Character\Character;
+use ChrisHarrison\Citphp\Model\Character\NonNullCharacter;
 use ChrisHarrison\Citphp\Model\Characters;
 use ChrisHarrison\Citphp\Model\District;
 use ChrisHarrison\Citphp\Model\DistrictColour;
@@ -41,7 +42,6 @@ use ChrisHarrison\Citphp\Model\Exceptions\UseLaboratoryPowerNotPlayable;
 use ChrisHarrison\Citphp\Model\Exceptions\UseSmithyPowerNotPlayable;
 use ChrisHarrison\Citphp\Model\GameId;
 use ChrisHarrison\Citphp\Model\GoldValue;
-use ChrisHarrison\Citphp\Model\NonNullCharacter;
 use ChrisHarrison\Citphp\Model\Player;
 use ChrisHarrison\Citphp\Model\PlayerId;
 use ChrisHarrison\Citphp\Model\Players;

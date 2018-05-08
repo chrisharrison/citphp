@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace ChrisHarrison\Citphp\Model;
+namespace ChrisHarrison\Citphp\Model\Character;
 
 use Funeralzone\ValueObjects\Nullable;
 

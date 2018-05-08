@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace ChrisHarrison\Citphp\Model;
+namespace ChrisHarrison\Citphp\Model\Character;
+
+use ChrisHarrison\Citphp\Model\Characters;
 
 final class NonNullCharacter implements Character
 {
