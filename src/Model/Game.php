@@ -121,11 +121,6 @@ final class Game
 			throw ChooseCharacterNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
 		}
 
-		// Check the player has not already chosen a character
-		if (!$player->currentCharacter()->isNull()) {
-			throw ChooseCharacterNotPlayable::alreadyPlayed($player);
-		}
-
 		// Check if the character has not already been chosen
 		if (!$this->characterDeck->has($character)) {
 			throw ChooseCharacterNotPlayable::characterHasBeenDrawn($player, $character);
@@ -261,15 +256,15 @@ final class Game
             throw ChooseDistrictsNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
-		// Check if the districts they want to choose were drawn
-		if (!$this->round->potentialHand()->hasAll($districts)) {
-			throw ChooseDistrictsNotPlayable::notInHand($player, $districts);
-		}
-
 		// Check they haven't already completed their default action
 		if ($this->round->isDefaultActionCompleted()) {
 			throw ChooseDistrictsNotPlayable::defaultActionCompleted($player);
 		}
+
+        // Check if the districts they want to choose were drawn
+        if (!$this->round->potentialHand()->hasAll($districts)) {
+            throw ChooseDistrictsNotPlayable::notInHand($player, $districts);
+        }
 
 		// If the player has built the Library district, they can choose 2 cards, else 1
 		$maxNumberOfCardsToBeChosen = 1;
@@ -407,14 +402,14 @@ final class Game
             throw MurderNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
+        // Check they haven't already exercised their power
+        if ($this->round->isSpecialPowerPlayed()) {
+            throw MurderNotPlayable::specialPowerPlayed($player);
+        }
+
 		// Check they are playing the assassin
 		if (!$player->currentCharacter()->isSame(NonNullCharacter::assassin())) {
 			throw MurderNotPlayable::notTheAssassin($player);
-		}
-
-		// Check they haven't already exercised their power
-		if ($this->round->isSpecialPowerPlayed()) {
-			throw MurderNotPlayable::specialPowerPlayed($player);
 		}
 
         $this->recordThat(Murdered::occur($this->id->toNative(), [
@@ -455,14 +450,14 @@ final class Game
             throw StealNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
+        // Check they haven't already exercised their power
+        if ($this->round->isSpecialPowerPlayed()) {
+            throw StealNotPlayable::specialPowerPlayed($player);
+        }
+
 		// Check they are playing the thief
 		if (!$player->currentCharacter()->isSame(NonNullCharacter::thief())) {
 			throw StealNotPlayable::notTheThief($player);
-		}
-
-		// Check they haven't already exercised their power
-		if ($this->round->isSpecialPowerPlayed()) {
-			throw StealNotPlayable::specialPowerPlayed($player);
 		}
 
         $this->recordThat(Theft::occur($this->id->toNative(), [
@@ -501,14 +496,14 @@ final class Game
             throw SwapHandWithPlayerNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
+        // Check they haven't already exercised their power
+        if ($this->round->isSpecialPowerPlayed()) {
+            throw SwapHandWithPlayerNotPlayable::specialPowerPlayed($player);
+        }
+
 		// Check they are playing the magician
 		if (!$player->currentCharacter()->isSame(NonNullCharacter::magician())) {
 			throw SwapHandWithPlayerNotPlayable::notTheMagician($player);
-		}
-
-		// Check they haven't already exercised their power
-        if ($this->round->isSpecialPowerPlayed()) {
-			throw SwapHandWithPlayerNotPlayable::specialPowerPlayed($player);
 		}
 
         $this->recordThat(SwappedHandWithPlayer::occur($this->id->toNative(), [
@@ -554,14 +549,14 @@ final class Game
             throw SwapHandWithDeckNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
+        // Check they haven't already exercised their power
+        if ($this->round->isSpecialPowerPlayed()) {
+            throw SwapHandWithDeckNotPlayable::specialPowerPlayed($player);
+        }
+
 		// Check they are playing the magician
 		if (!$player->currentCharacter()->isSame(NonNullCharacter::magician())) {
 			throw SwapHandWithDeckNotPlayable::notTheMagician($player);
-		}
-
-		// Check they haven't already exercised their power
-		if ($this->round->isSpecialPowerPlayed()) {
-			throw SwapHandWithDeckNotPlayable::specialPowerPlayed($player);
 		}
 
 		// Check they want to swap at least 1 card
@@ -615,6 +610,11 @@ final class Game
             throw CollectBonusIncomeNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
         }
 
+        // Check they haven't already exercised their power
+        if ($this->round->isSpecialPowerPlayed()) {
+            throw CollectBonusIncomeNotPlayable::specialPowerPlayed($player);
+        }
+
 		// Check they are playing the king, bishop, merchant or warlord
 		if (!$player->currentCharacter()->isOneOf(new Characters([
 			NonNullCharacter::king(),
@@ -623,11 +623,6 @@ final class Game
             NonNullCharacter::warlord(),
 		]))) {
 			throw CollectBonusIncomeNotPlayable::notPlayingABonusIncomeCharacter($player);
-		}
-
-		// Check they haven't already exercised their power
-		if ($this->round->isSpecialPowerPlayed()) {
-			throw CollectBonusIncomeNotPlayable::specialPowerPlayed($player);
 		}
 
         $this->recordThat(CollectedBonusIncome::occur($this->id->toNative(), [
@@ -923,7 +918,7 @@ final class Game
     /**
      * @return int
      */
-    private function sizeOfCompletedCity(): int
+    public function sizeOfCompletedCity(): int
 	{
 		// Ordinarily 8 but if the Bell Tower has been built - 7.
 		$bellTowerBuilt = false;
