@@ -12,8 +12,4 @@ final class DistrictsDrawn extends AggregateChanged
     public function playerId(): PlayerId
     {
     }
-
-    public function numberDrawn(): int
-    {
-    }
 }

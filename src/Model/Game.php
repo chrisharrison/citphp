@@ -214,15 +214,8 @@ final class Game
 			throw DrawDistrictsNotPlayable::defaultActionInitiated($player);
 		}
 
-        // If the player has built the Observatory district, they can draw 3 cards, else 2
-        $numberDrawn = 2;
-        if ($player->city()->has(District::observatory())) {
-            $numberDrawn = 3;
-        }
-
         $this->recordThat(DistrictsDrawn::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
-            'numberDrawn' => $numberDrawn,
         ]));
 	}
 
@@ -230,8 +223,14 @@ final class Game
     {
         $player = $this->players->byId($event->playerId());
 
+        // If the player has built the Observatory district, they can draw 3 cards, else 2
+        $numberDrawn = 2;
+        if ($player->city()->has(District::observatory())) {
+            $numberDrawn = 3;
+        }
+
         // Draw districts from the district deck and put them in the player's potential hand
-        $draw = $this->districtDeck->draw($event->numberDrawn());
+        $draw = $this->districtDeck->draw($numberDrawn);
         $this->districtDeck = $draw->deckNow();
         $player = $player->withRound($player->round()->withPotentialHand($draw->drawn()));
 
