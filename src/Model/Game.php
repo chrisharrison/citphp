@@ -41,9 +41,12 @@ use ChrisHarrison\Citphp\Model\Exceptions\UseLaboratoryPowerNotPlayable;
 use ChrisHarrison\Citphp\Model\Exceptions\UseSmithyPowerNotPlayable;
 use ChrisHarrison\Citphp\Model\GameId;
 use ChrisHarrison\Citphp\Model\GoldValue;
+use ChrisHarrison\Citphp\Model\NonNullCharacter;
 use ChrisHarrison\Citphp\Model\Player;
 use ChrisHarrison\Citphp\Model\PlayerId;
 use ChrisHarrison\Citphp\Model\Players;
+use ChrisHarrison\Citphp\Model\Round;
+use ChrisHarrison\Citphp\Model\RoundMode;
 use Prooph\EventSourcing\Aggregate\EventProducerTrait;
 use Prooph\EventSourcing\Aggregate\EventSourcedTrait;
 use Prooph\EventSourcing\AggregateChanged;
@@ -62,6 +65,11 @@ final class Game
      * @var Players
      */
     private $players;
+
+    /**
+     * @var Round
+     */
+    private $round;
 
     /**
      * @var Characters
@@ -101,15 +109,20 @@ final class Game
      */
     public function chooseCharacter(PlayerId $playerId, Character $character): void
 	{
-		$player = $this->players->byId($playerId);
+	    $player = $this->players->byId($playerId);
+
+		// Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::CHOOSE_CHARACTER())) {
+            throw ChooseCharacterNotPlayable::mustBeInChooseCharacterMode($player);
+        }
 
 		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw ChooseCharacterNotPlayable::notPlayersTurn($player, $this->players->current());
+		if (!$this->round->playerId()->isSame($playerId)) {
+			throw ChooseCharacterNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
 		}
 
 		// Check the player has not already chosen a character
-		if ($player->round()->hasChosenCharacter()) {
+		if (!$player->currentCharacter()->isNull()) {
 			throw ChooseCharacterNotPlayable::alreadyPlayed($player);
 		}
 
@@ -126,16 +139,16 @@ final class Game
 
     private function applyCharacterChosen(CharacterChosen $event): void
     {
-        // Set the player's round to have chosen the character
+        // Set the player to have chosen the character
         $player = $this->players->byId($event->playerId());
-        $player = $player->withRound($player->round()->withCharacter($event->character()));
+        $player = $player->withCurrentCharacter($event->character());
         $this->players = $this->players->withPlayer($player);
 
         // Remove the character from the deck
         $this->characterDeck = $this->characterDeck->remove(new Characters([$event->character()]));
 
         // Advance turn
-        $this->players = $this->players->withTurnAdvanced();
+        $this->advanceTurn();
     }
 
     /**
@@ -146,23 +159,18 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw TakeGoldNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw TakeGoldNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw TakeGoldNotPlayable::graveyardTurn($player);
-		}
-
-		// Check they have chosen a character
-		if ($player->round()->hasChosenCharacter()) {
-			throw TakeGoldNotPlayable::characterNotChosenYet($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw TakeGoldNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they haven't already initiated their default action
-		if ($player->round()->isDefaultActionInitiated()) {
+		if ($this->round->isDefaultActionInitiated()) {
 			throw TakeGoldNotPlayable::defaultActionInitiated($player);
 		}
 
@@ -177,13 +185,12 @@ final class Game
 
         // Increment the player's purse
         $player = $player->withPurse($player->purse()->withIncrement(GoldValue::fromNative(2)));
+        $this->players = $this->players->withPlayer($player);
 
-        // Set the player's round to have initiated and completed the default action
-        $player = $player->withRound($player->round()->withDefaultActionCompleted());
+        // Set the round to have initiated and completed the default action
+        $this->round = $this->round->withDefaultActionCompleted();
 
         $this->merchantAdditionalGold($player);
-
-        $this->players = $this->players->withPlayer($player);
     }
 
     /**
@@ -194,23 +201,18 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw DrawDistrictsNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw DrawDistrictsNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw DrawDistrictsNotPlayable::graveyardTurn($player);
-		}
-
-		// Check they have chosen a character
-		if ($player->round()->hasChosenCharacter()) {
-			throw DrawDistrictsNotPlayable::characterNotChosenYet($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw DrawDistrictsNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they haven't already initiated their default action
-		if ($player->round()->isDefaultActionInitiated()) {
+		if ($this->round->isDefaultActionInitiated()) {
 			throw DrawDistrictsNotPlayable::defaultActionInitiated($player);
 		}
 
@@ -229,15 +231,15 @@ final class Game
             $numberDrawn = 3;
         }
 
-        // Draw districts from the district deck and put them in the player's potential hand
+        // Draw districts from the district deck...
         $draw = $this->districtDeck->draw($numberDrawn);
         $this->districtDeck = $draw->deckNow();
-        $player = $player->withRound($player->round()->withPotentialHand($draw->drawn()));
 
-        // Set the player's round to have initiated the default action
-        $player = $player->withRound($player->round()->withDefaultActionInitiated());
+        // ...and put them in the potential hand
+        $this->round = $this->round->withPotentialHand($draw->drawn());
 
-        $this->players = $this->players->withPlayer($player);
+        // Set the round to have initiated the default action
+        $this->round = $this->round->withDefaultActionInitiated();
     }
 
     /**
@@ -249,23 +251,23 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw ChooseDistrictsNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw ChooseDistrictsNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw ChooseDistrictsNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw ChooseDistrictsNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check if the districts they want to choose were drawn
-		if (!$player->round()->potentialHand()->hasAll($districts)) {
+		if (!$this->round->potentialHand()->hasAll($districts)) {
 			throw ChooseDistrictsNotPlayable::notInHand($player, $districts);
 		}
 
 		// Check they haven't already completed their default action
-		if ($player->round()->isDefaultActionCompleted()) {
+		if ($this->round->isDefaultActionCompleted()) {
 			throw ChooseDistrictsNotPlayable::defaultActionCompleted($player);
 		}
 
@@ -290,17 +292,18 @@ final class Game
         $player = $this->players->byId($event->playerId());
 
         // Put the districts in the player's hand. Any remaining districts in the potential hand go back in the district deck
-        $remainingDeck = $player->round()->potentialHand()->remove($event->districts());
+        $remainingDeck = $this->round->potentialHand()->remove($event->districts());
         $this->districtDeck = $this->districtDeck->putOnTop($remainingDeck);
-        $player = $player->withRound($player->round()->withPotentialHand(new Districts([])));
+        $this->round = $this->round->withPotentialHand(new Districts([]));
         $player = $player->withHand($player->hand()->putOnTop($event->districts()));
 
-        // Set the player's round to have completed the default action
-        $player = $player->withRound($player->round()->withDefaultActionCompleted());
+        // Set the round to have completed the default action
+        $this->round = $this->round->withDefaultActionCompleted();
+
+        // Persist player
+        $this->players = $this->players->withPlayer($player);
 
         $this->merchantAdditionalGold($player);
-
-        $this->players = $this->players->withPlayer($player);
     }
 
     /**
@@ -312,29 +315,29 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw BuildDistrictsNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+		// Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw BuildDistrictsNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw BuildDistrictsNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw BuildDistrictsNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they have completed their default action
-		if (!$player->round()->isDefaultActionCompleted()) {
+		if (!$this->round->isDefaultActionCompleted()) {
 			throw BuildDistrictsNotPlayable::defaultActionNotCompleted($player);
 		}
 
 		// Check they haven't already built their maximum districts this round (if playing architect it's 3, else 1)
-		if ($player->round()->character()->isSame(Character::architect())) {
+		if ($player->currentCharacter()->isSame(NonNullCharacter::architect())) {
 			$maximumDistrictsThisRound = 3;
 		} else {
 			$maximumDistrictsThisRound = 1;
 		}
 
-		if ($player->round()->numberOfDistrictsBuilt() + $districts->count() > $maximumDistrictsThisRound) {
+		if ($this->round->numberOfDistrictsBuilt() + $districts->count() > $maximumDistrictsThisRound) {
 			throw BuildDistrictsNotPlayable::willExceedMaximumDistricts($player, $maximumDistrictsThisRound);
 		}
 
@@ -378,9 +381,10 @@ final class Game
         // Decrement the player's purse
         $player = $player->withPurse($player->purse()->withDecrement($event->districts()->totalValue()));
 
-        // Increment the number of districts built by this player this round
-        $player = $player->withRound($player->round()->withIncrementedNumberOfDistrictsBuilt($event->districts()->count()));
+        // Increment the number of districts built this round
+        $this->round = $this->round->withIncrementedNumberOfDistrictsBuilt($event->districts()->count());
 
+        // Persist player
         $this->players = $this->players->withPlayer($player);
     }
 
@@ -393,23 +397,23 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw MurderNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw MurderNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw MurderNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw MurderNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the assassin
-		if (!$player->round()->character()->isSame(Character::assassin())) {
+		if (!$player->currentCharacter()->isSame(NonNullCharacter::assassin())) {
 			throw MurderNotPlayable::notTheAssassin($player);
 		}
 
 		// Check they haven't already exercised their power
-		if ($player->round()->isSpecialPowerPlayed()) {
+		if ($this->round->isSpecialPowerPlayed()) {
 			throw MurderNotPlayable::specialPowerPlayed($player);
 		}
 
@@ -421,16 +425,14 @@ final class Game
 
     private function applyMurdered(Murdered $event): void
     {
-        $player = $this->players->byId($event->playerId());
-
         // Set the victim to murdered
         $victim = $this->players->byCharacter($event->victim());
-        $victim = $victim->withRound($victim->round()->murdered());
+        $victim = $victim->withIsMurdered();
+        $this->players = $this->players->withPlayer($victim);
 
-        // Set the player's round to have played the special power
-        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
+        // Set the round to have played the special power
+        $this->round = $this->round->withSpecialPowerPlayed();
 
-        $this->players = $this->players->withPlayer($player);
         $this->players = $this->players->withPlayer($victim);
     }
 
@@ -443,23 +445,23 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw StealNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw StealNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw StealNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw StealNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the thief
-		if (!$player->round()->character()->isSame(Character::thief())) {
+		if (!$player->currentCharacter()->isSame(NonNullCharacter::thief())) {
 			throw StealNotPlayable::notTheThief($player);
 		}
 
 		// Check they haven't already exercised their power
-		if ($player->round()->isSpecialPowerPlayed()) {
+		if ($this->round->isSpecialPowerPlayed()) {
 			throw StealNotPlayable::specialPowerPlayed($player);
 		}
 
@@ -471,17 +473,13 @@ final class Game
 
     private function applyTheft(Theft $event): void
     {
-        $player = $this->players->byId($event->playerId());
-
         // Set the victim to thieved
         $victim = $this->players->byCharacter($event->victim());
-        $victim = $victim->withRound($victim->round()->victimOfTheft());
+        $victim = $victim->withIsVictimOfTheft();
+        $this->players = $this->players->withPlayer($victim);
 
         // Set the player's round to have played the special power
-        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
-
-        $this->players = $this->players->withPlayer($player);
-        $this->players = $this->players->withPlayer($victim);
+        $this->round = $this->round->withSpecialPowerPlayed();
     }
 
     /**
@@ -493,23 +491,23 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw SwapHandWithPlayerNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw SwapHandWithPlayerNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw SwapHandWithPlayerNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw SwapHandWithPlayerNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the magician
-		if (!$player->round()->character()->isSame(Character::magician())) {
+		if (!$player->currentCharacter()->isSame(NonNullCharacter::magician())) {
 			throw SwapHandWithPlayerNotPlayable::notTheMagician($player);
 		}
 
 		// Check they haven't already exercised their power
-		if ($player->round()->isSpecialPowerPlayed()) {
+        if ($this->round->isSpecialPowerPlayed()) {
 			throw SwapHandWithPlayerNotPlayable::specialPowerPlayed($player);
 		}
 
@@ -530,8 +528,8 @@ final class Game
         $player = $player->withHand($victimsHand);
         $victim = $player->withHand($playersHand);
 
-        // Set the player's round to have played the special power
-        $player->withRound($player->round()->withSpecialPowerPlayed());
+        // Set the round to have played the special power
+        $this->round = $this->round->withSpecialPowerPlayed();
 
         $this->players = $this->players->withPlayer($player);
         $this->players = $this->players->withPlayer($victim);
@@ -546,23 +544,23 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw SwapHandWithDeckNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw SwapHandWithDeckNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw SwapHandWithDeckNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw SwapHandWithDeckNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the magician
-		if (!$player->round()->character()->isSame(Character::magician())) {
+		if (!$player->currentCharacter()->isSame(NonNullCharacter::magician())) {
 			throw SwapHandWithDeckNotPlayable::notTheMagician($player);
 		}
 
 		// Check they haven't already exercised their power
-		if ($player->round()->isSpecialPowerPlayed()) {
+		if ($this->round->isSpecialPowerPlayed()) {
 			throw SwapHandWithDeckNotPlayable::specialPowerPlayed($player);
 		}
 
@@ -593,8 +591,8 @@ final class Game
         $this->districtDeck = $draw->deckNow();
         $player = $player->withHand($player->hand()->putOnTop($draw->drawn()));
 
-        // Set the player's round to have played the special power
-        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
+        // Set the round to have played the special power
+        $this->round = $this->round->withSpecialPowerPlayed();
 
         $this->players = $this->players->withPlayer($player);
     }
@@ -607,28 +605,28 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw CollectBonusIncomeNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw CollectBonusIncomeNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw CollectBonusIncomeNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw CollectBonusIncomeNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the king, bishop, merchant or warlord
-		if (!$player->round()->character()->isOneOf(new Characters([
-			Character::king(),
-			Character::bishop(),
-			Character::merchant(),
-			Character::warlord(),
+		if (!$player->currentCharacter()->isOneOf(new Characters([
+			NonNullCharacter::king(),
+            NonNullCharacter::bishop(),
+            NonNullCharacter::merchant(),
+            NonNullCharacter::warlord(),
 		]))) {
 			throw CollectBonusIncomeNotPlayable::notPlayingABonusIncomeCharacter($player);
 		}
 
 		// Check they haven't already exercised their power
-		if ($player->round()->isSpecialPowerPlayed()) {
+		if ($this->round->isSpecialPowerPlayed()) {
 			throw CollectBonusIncomeNotPlayable::specialPowerPlayed($player);
 		}
 
@@ -643,24 +641,24 @@ final class Game
 
         // Work out how much bonus income the player should receive
         $bonusIncome = 0;
-        if ($player->round()->character()->isSame(Character::king())) {
+        if ($player->currentCharacter()->isSame(NonNullCharacter::king())) {
             $bonusIncome = $player->city()->byDistrictColour(DistrictColour::YELLOW())->count();
         }
-        if ($player->round()->character()->isSame(Character::bishop())) {
+        if ($player->currentCharacter()->isSame(NonNullCharacter::bishop())) {
             $bonusIncome = $player->city()->byDistrictColour(DistrictColour::BLUE())->count();
         }
-        if ($player->round()->character()->isSame(Character::merchant())) {
+        if ($player->currentCharacter()->isSame(NonNullCharacter::merchant())) {
             $bonusIncome = $player->city()->byDistrictColour(DistrictColour::GREEN())->count();
         }
-        if ($player->round()->character()->isSame(Character::warlord())) {
+        if ($player->currentCharacter()->isSame(NonNullCharacter::warlord())) {
             $bonusIncome = $player->city()->byDistrictColour(DistrictColour::RED())->count();
         }
 
         // Increment the player's purse by the above amount
         $player = $player->withPurse($player->purse()->withIncrement(GoldValue::fromNative($bonusIncome)));
 
-        // Set the player's round to have played the special power
-        $player = $player->withRound($player->round()->withSpecialPowerPlayed());
+        // Set the round to have played the special power
+        $this->round = $this->round->withSpecialPowerPlayed();
 
         $this->players = $this->players->withPlayer($player);
     }
@@ -676,28 +674,28 @@ final class Game
 		$player = $this->players->byId($playerId);
 		$victim = $this->players->byId($victimId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw DestroyDistrictNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw DestroyDistrictNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw DestroyDistrictNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw DestroyDistrictNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they are playing the warlord
-		if (!$player->round()->character()->isSame(Character::warlord())) {
+		if (!$player->currentCharacter()->isSame(NonNullCharacter::warlord())) {
 			throw DestroyDistrictNotPlayable::notTheWarlord($player);
 		}
 
 		// Check they have completed their action
-		if (!$player->round()->isDefaultActionCompleted()) {
+		if (!$this->round->isDefaultActionCompleted()) {
 			throw DestroyDistrictNotPlayable::defaultActionNotCompleted($player);
 		}
 
 		// Check they haven't already destroyed
-		if ($player->round()->isDestroyDistrictPlayed()) {
+		if ($this->round->isDestroyDistrictPlayed()) {
 			throw DestroyDistrictNotPlayable::destroyDistrictPlayed($player);
 		}
 
@@ -744,7 +742,7 @@ final class Game
         $victim = $victim->withCity($victim->city()->remove(new Districts([$event->district()])));
 
         // Set that the player has destroyed a district
-        $player = $player->withRound($player->round()->withDestroyDistrictPlayed());
+        $this->round = $this->round->withDestroyDistrictPlayed();
 
         $this->players = $this->players->withPlayer($player);
         $this->players = $this->players->withPlayer($victim);
@@ -758,10 +756,10 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw EndTurnNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw EndTurnNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
         $this->recordThat(TurnEnded::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
@@ -771,9 +769,7 @@ final class Game
     private function applyTurnEnded(): void
     {
         // Advance turn
-        $this->players = $this->players->withTurnAdvanced();
-
-        // TODO: Initiate graveyard turn and others
+        $this->advanceTurn();
     }
 
     /**
@@ -785,20 +781,15 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw UseLaboratoryPowerNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw UseLaboratoryPowerNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check they have chosen a character
-		if ($player->round()->hasChosenCharacter()) {
-			throw UseLaboratoryPowerNotPlayable::characterNotChosenYet($player);
-		}
-
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw UseLaboratoryPowerNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw UseLaboratoryPowerNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they have built the Laboratory
 		if (!$player->city()->has(District::laboratory())) {
@@ -811,7 +802,7 @@ final class Game
 		}
 
 		// Check they have not already used this power
-		if ($player->round()->isLaboratoryPowerPlayed()) {
+		if ($this->round->isLaboratoryPowerPlayed()) {
 			throw UseLaboratoryPowerNotPlayable::laboratoryPowerPlayed($player);
 		}
 
@@ -832,7 +823,7 @@ final class Game
         $player = $player->withPurse($player->purse()->withIncrement(GoldValue::fromNative(1)));
 
         // Set that the player has used this power
-        $player = $player->withRound($player->round()->withLaboratoryPowerPlayed());
+        $this->round = $this->round->withLaboratoryPowerPlayed();
 
         $this->players = $this->players->withPlayer($player);
     }
@@ -845,20 +836,15 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw UseSmithyPowerNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::NORMAL())) {
+            throw UseSmithyPowerNotPlayable::mustBeInNormalPlayMode($player);
+        }
 
-		// Check they have chosen a character
-		if ($player->round()->hasChosenCharacter()) {
-			throw UseSmithyPowerNotPlayable::characterNotChosenYet($player);
-		}
-
-		// Check this is not a graveyard turn
-		if ($player->round()->isGraveyardTurn()) {
-			throw UseSmithyPowerNotPlayable::graveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw UseSmithyPowerNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
 		// Check they have built the Smithy
 		if (!$player->city()->has(District::smithy())) {
@@ -871,7 +857,7 @@ final class Game
 		}
 
 		// Check they have not already used this power
-		if ($player->round()->isSmithyPowerPlayed()) {
+		if ($this->round->isSmithyPowerPlayed()) {
 			throw UseSmithyPowerNotPlayable::smithyPowerPlayed($player);
 		}
 
@@ -893,7 +879,7 @@ final class Game
         $player = $player->withHand($player->hand()->putOnTop($draw->drawn()));
 
         // Set that the player has used this power
-        $player = $player->withRound($player->round()->withSmithyPowerPlayed());
+        $this->round = $this->round->withSmithyPowerPlayed();
 
         $this->players = $this->players->withPlayer($player);
     }
@@ -906,15 +892,15 @@ final class Game
 	{
 		$player = $this->players->byId($playerId);
 
-		// Check if it's this player's turn
-		if (!$player->round()->isTurn()) {
-			throw UseGraveyardPowerNotPlayable::notPlayersTurn($player, $this->players->current());
-		}
+        // Check turn mode
+        if (!$this->round->mode()->isSame(RoundMode::GRAVEYARD())) {
+            throw UseGraveyardPowerNotPlayable::mustBeInGraveyardMode($player);
+        }
 
-		// Check this is a graveyard turn
-		if (!$player->round()->isGraveyardTurn()) {
-			throw UseGraveyardPowerNotPlayable::notAGraveyardTurn($player);
-		}
+        // Check if it's this player's turn
+        if (!$this->round->playerId()->isSame($playerId)) {
+            throw UseGraveyardPowerNotPlayable::notPlayersTurn($player, $this->players->byId($this->round->playerId()));
+        }
 
         $this->recordThat(UsedGraveyardPower::occur($this->id->toNative(), [
             'playerId' => $playerId->toNative(),
@@ -955,11 +941,17 @@ final class Game
 	private function merchantAdditionalGold(Player $player): void
     {
         // If the player is the merchant, the get additional gold after completing their default action
-        if (!$player->round()->character()->isSame(Character::merchant())) {
+        if (!$player->currentCharacter()->isSame(NonNullCharacter::merchant())) {
             return;
         }
+
         $player = $player->withPurse($player->purse()->withIncrement(GoldValue::fromNative(1)));
         $this->players = $this->players->withPlayer($player);
         return;
+    }
+
+    private function advanceTurn(): void
+    {
+        // TODO: Initiate graveyard turn and others
     }
 }

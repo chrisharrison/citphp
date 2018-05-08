@@ -16,6 +16,10 @@ final class ChooseCharacterNotPlayable extends Exception
     {
     }
 
+    public static function mustBeInChooseCharacterMode(Player $player): self
+    {
+    }
+
     protected static function turnName(): string
     {
         // TODO: Implement turnName() method.

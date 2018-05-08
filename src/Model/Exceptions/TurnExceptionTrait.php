@@ -26,15 +26,7 @@ trait TurnExceptionTrait
      * @param Player $player
      * @return static
      */
-    public static function graveyardTurn(Player $player)
-    {
-    }
-
-    /**
-     * @param Player $player
-     * @return static
-     */
-    public static function characterNotChosenYet(Player $player)
+    public static function mustBeInNormalPlayMode(Player $player)
     {
     }
 

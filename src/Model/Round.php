@@ -8,25 +8,11 @@ use Funeralzone\ValueObjects\ValueObject;
 
 final class Round implements ValueObject
 {
-    private $character;
-    private $isTurn;
-    private $isGraveyardTurn;
-    private $isDefaultActionInitiated;
-    private $isDefaultActionCompleted;
-    private $isSpecialPowerPlayed;
-    private $isDestroyDistrictPlayed;
-    private $isLaboratoryPowerPlayed;
-    private $isSmithyPowerPlayed;
-
-    public function isTurn(): bool
+    public function playerId(): PlayerId
     {
     }
 
-    public function hasChosenCharacter(): bool
-    {
-    }
-
-    public function isGraveyardTurn(): bool
+    public function mode(): RoundMode
     {
     }
 
@@ -58,23 +44,15 @@ final class Round implements ValueObject
     {
     }
 
-    public function character(): Character
-    {
-    }
-
     public function numberOfDistrictsBuilt(): int
     {
     }
 
-    public function withCharacter(Character $character): Round
+    public function withDefaultActionInitiated(): Round
     {
     }
 
     public function withDefaultActionCompleted(): Round
-    {
-    }
-
-    public function withDefaultActionInitiated(): Round
     {
     }
 
@@ -99,14 +77,6 @@ final class Round implements ValueObject
     }
 
     public function withIncrementedNumberOfDistrictsBuilt(int $amount): Round
-    {
-    }
-
-    public function murdered(): Round
-    {
-    }
-
-    public function victimOfTheft(): Round
     {
     }
 }

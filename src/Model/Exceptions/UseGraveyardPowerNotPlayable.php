@@ -11,7 +11,7 @@ final class UseGraveyardPowerNotPlayable extends Exception
 {
     use TurnExceptionTrait;
 
-    public static function notAGraveyardTurn(Player $player): self
+    public static function mustBeInGraveyardMode(Player $player): self
     {
     }
 

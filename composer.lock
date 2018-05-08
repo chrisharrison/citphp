@@ -147,16 +147,16 @@
         },
         {
             "name": "funeralzone/valueobjects",
-            "version": "0.3.1",
+            "version": "0.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/funeralzone/valueobjects.git",
-                "reference": "38c86b318ca3f67e048fed8455a456ec18b8e8fa"
+                "reference": "c27385fd3753e647ffa780840d78820a49f07bfc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/funeralzone/valueobjects/zipball/38c86b318ca3f67e048fed8455a456ec18b8e8fa",
-                "reference": "38c86b318ca3f67e048fed8455a456ec18b8e8fa",
+                "url": "https://api.github.com/repos/funeralzone/valueobjects/zipball/c27385fd3753e647ffa780840d78820a49f07bfc",
+                "reference": "c27385fd3753e647ffa780840d78820a49f07bfc",
                 "shasum": ""
             },
             "require": {
@@ -186,7 +186,7 @@
                 }
             ],
             "description": "A PHP 7.1 value objects helper library.",
-            "time": "2018-01-18T12:28:33+00:00"
+            "time": "2018-05-01T13:55:21+00:00"
         },
         {
             "name": "league/uri",
