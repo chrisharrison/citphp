@@ -700,7 +700,7 @@ final class Game
         return;
     }
 
-    private function onCharacterChosen(CharacterChosen $event): void
+    private function applyCharacterChosen(CharacterChosen $event): void
 	{
 		// Set the player's round to have chosen the character
         $player = $this->players->byId($event->playerId());
@@ -714,7 +714,7 @@ final class Game
         $this->players = $this->players->withTurnAdvanced();
 	}
 
-    private function onGoldTaken(GoldTaken $event): void
+    private function applyGoldTaken(GoldTaken $event): void
 	{
         $player = $this->players->byId($event->playerId());
 
@@ -729,7 +729,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onDistrcitsDrawn(DistrictsDrawn $event): void
+    private function applyDistrcitsDrawn(DistrictsDrawn $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -744,7 +744,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onDistrictsChosen(DistrictsChosen $event): void
+    private function applyDistrictsChosen(DistrictsChosen $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -762,7 +762,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onDistrictsBuilt(DistrictsBuilt $event): void
+    private function applyDistrictsBuilt(DistrictsBuilt $event): void
 	{
         $player = $this->players->byId($event->playerId());
 
@@ -779,7 +779,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onMurdered(Murdered $event): void
+    private function applyMurdered(Murdered $event): void
 	{
         $player = $this->players->byId($event->playerId());
 
@@ -794,7 +794,7 @@ final class Game
         $this->players = $this->players->withPlayer($victim);
 	}
 
-    private function onTheft(Theft $event): void
+    private function applyTheft(Theft $event): void
 	{
         $player = $this->players->byId($event->playerId());
 
@@ -809,7 +809,7 @@ final class Game
         $this->players = $this->players->withPlayer($victim);
 	}
 
-    private function onSwappedHandWithPlayer(SwappedHandWithPlayer $event): void
+    private function applySwappedHandWithPlayer(SwappedHandWithPlayer $event): void
 	{
         $player = $this->players->byId($event->playerId());
         $victim = $this->players->byId($event->victimId());
@@ -827,7 +827,7 @@ final class Game
         $this->players = $this->players->withPlayer($victim);
 	}
 
-    private function onSwappedHandWithDeck(SwappedHandWithDeck $event): void
+    private function applySwappedHandWithDeck(SwappedHandWithDeck $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -844,7 +844,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onCollectedBonusIncome(CollectedBonusIncome $event): void
+    private function applyCollectedBonusIncome(CollectedBonusIncome $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -872,7 +872,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onDistrictDestroyed(DistrictDestroyed $event): void
+    private function applyDistrictDestroyed(DistrictDestroyed $event): void
 	{
         $player = $this->players->byId($event->playerId());
         $victim = $this->players->byId($event->victimId());
@@ -887,7 +887,7 @@ final class Game
         $this->players = $this->players->withPlayer($victim);
 	}
 
-    private function onTurnEnded(): void
+    private function applyTurnEnded(): void
 	{
 		// Advance turn
         $this->players = $this->players->withTurnAdvanced();
@@ -895,7 +895,7 @@ final class Game
         // TODO: Initiate graveyard turn and others
 	}
 
-    private function onUsedLaboratoryPower(UsedLaboratoryPower $event): void
+    private function applyUsedLaboratoryPower(UsedLaboratoryPower $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -911,7 +911,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onUsedSmithyPower(UsedSmithyPower $event): void
+    private function applyUsedSmithyPower(UsedSmithyPower $event): void
 	{
 	    $player = $this->players->byId($event->playerId());
 
@@ -929,7 +929,7 @@ final class Game
         $this->players = $this->players->withPlayer($player);
 	}
 
-    private function onUsedGraveyardPower(UsedGraveyardPower $event): void
+    private function applyUsedGraveyardPower(UsedGraveyardPower $event): void
 	{
         $player = $this->players->byId($event->playerId());
 
