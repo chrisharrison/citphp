@@ -46,6 +46,7 @@ use ChrisHarrison\Citphp\Model\PlayerId;
 use ChrisHarrison\Citphp\Model\Players;
 use Prooph\EventSourcing\Aggregate\EventProducerTrait;
 use Prooph\EventSourcing\Aggregate\EventSourcedTrait;
+use Prooph\EventSourcing\AggregateChanged;
 
 final class Game
 {
@@ -71,6 +72,27 @@ final class Game
      * @var Districts
      */
     private $districtDeck;
+
+    /**
+     * @return string
+     */
+    protected function aggregateId(): string
+    {
+        return $this->id->toNative();
+    }
+
+    /**
+     * @param AggregateChanged $event
+     */
+    protected function apply(AggregateChanged $event): void
+    {
+        $className = get_class($event);
+        $className = substr($className, strrpos($className, '\\') + 1);
+        $method = 'apply' . $className;
+        $this->$method($event);
+
+        return;
+    }
 
     /**
      * @param PlayerId $playerId
