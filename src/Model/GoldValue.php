@@ -13,17 +13,21 @@ final class GoldValue implements ValueObject
 
     public function isMoreThan(GoldValue $value): bool
     {
+        return ($this->toNative() > $value->toNative());
     }
 
     public function isLessThan(GoldValue $value): bool
     {
+        return ($this->toNative() < $value->toNative());
     }
 
     public function withIncrement(GoldValue $value): GoldValue
     {
+        return new GoldValue($this->int + $value->toNative());
     }
 
     public function withDecrement(GoldValue $value): GoldValue
     {
+        return new GoldValue($this->int - $value->toNative());
     }
 }
