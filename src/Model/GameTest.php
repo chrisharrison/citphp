@@ -6,7 +6,7 @@ declare(strict_types=1);
 
 namespace ChrisHarrison\Citphp\Model;
 
-use Funeralzone\FAS\Common\AggregateTestingTrait;
+use ChrisHarrison\Citphp\Testing\AggregateTestingTrait;
 use PHPUnit\Framework\TestCase;
 
 final class GameTest extends TestCase

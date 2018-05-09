@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Funeralzone\FAS\Common;
+namespace ChrisHarrison\Citphp\Testing;
 
 use Prooph\EventSourcing\Aggregate\AggregateType;
 use Prooph\EventSourcing\AggregateRoot;
