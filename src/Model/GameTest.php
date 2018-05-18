@@ -33,6 +33,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_character_chosen_event()
+    {
+
+    }
+
     public function test_player_cannot_take_gold_when_round_mode_is_invalid()
     {
 
@@ -53,6 +58,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_gold_taken_event()
+    {
+
+    }
+
     public function test_player_cannot_draw_districts_when_round_mode_is_invalid()
     {
 
@@ -69,6 +79,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_draws_districts()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_districts_drawn_event()
     {
 
     }
@@ -104,6 +119,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_chooses_districts()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_districts_chosen_event()
     {
 
     }
@@ -158,6 +178,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_districts_built_event()
+    {
+
+    }
+
     public function test_player_cannot_murder_when_round_mode_is_invalid()
     {
 
@@ -179,6 +204,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_commits_murder()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_murdered_event()
     {
 
     }
@@ -208,6 +238,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_theft_event()
+    {
+
+    }
+
     public function test_player_cannot_swap_hand_with_player_when_round_mode_is_invalid()
     {
 
@@ -229,6 +264,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_swaps_hand_with_player()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_swapped_hand_with_player_event()
     {
 
     }
@@ -268,6 +308,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_swapped_hand_with_deck_event()
+    {
+
+    }
+
     public function test_player_cannot_collect_bonus_income_when_round_mode_is_invalid()
     {
 
@@ -289,6 +334,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_collects_bonus_income()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_collected_bonus_income_event()
     {
 
     }
@@ -348,12 +398,22 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_district_destroyed_event()
+    {
+
+    }
+
     public function test_player_cannot_end_their_turn_when_its_not_their_turn()
     {
 
     }
 
     public function test_event_is_raised_when_player_ends_turn()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_turn_ended_event()
     {
 
     }
@@ -388,6 +448,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_used_laboratory_power_event()
+    {
+
+    }
+
     public function test_player_cannot_use_the_smithy_power_when_round_mode_is_invalid()
     {
 
@@ -418,6 +483,11 @@ final class GameTest extends TestCase
 
     }
 
+    public function test_aggregate_reflects_application_of_used_smithy_power_event()
+    {
+
+    }
+
     public function test_player_cannot_use_the_graveyard_power_when_round_mode_is_invalid()
     {
 
@@ -429,6 +499,11 @@ final class GameTest extends TestCase
     }
 
     public function test_event_is_raised_when_player_uses_graveyard_power()
+    {
+
+    }
+
+    public function test_aggregate_reflects_application_of_used_graveyard_power_event()
     {
 
     }
